@@ -359,8 +359,7 @@ function modifyStats() {
     local int i;
     
     M = ModeInfo(Level.Game);
-  
-    
+      
     if(M != None && BonusStatsOn) {
         //search for the weapon stat and set it's extended stat
         for(i = 0; i < M.extendedProjectileDamageStats.Length; ++i) {
@@ -636,10 +635,10 @@ function SniperRifleAllowance() {
     */
     
     if(SniperPlayerThreshold) {
-        SnipeAmmoCount = 0;
+        SnipeAmmoCount = 0;		//does not work, yet ;p
         SnipeLife = 1.000000;        
         } else if(!SniperPlayerThreshold) {
-        SnipeAmmoCount = 10;
+        SnipeAmmoCount = 10;	//does not work, yet ;p
         SnipeLife = 0.000000;
     }               
 }
@@ -720,8 +719,7 @@ simulated event Actor ReplaceActor(Actor Other) {
     }
     
     if(Other.IsA('WeaponVehicleTank')) {
-        if(TankUsesMortarProjectile)
-            {
+        if(TankUsesMortarProjectile) {
                 WeaponVehicleTank(Other).aimClass = Class'AimArcWeapons';
                 WeaponVehicleTank(Other).projectileClass = Class'tribesmod.tmodTankRound';
                 WeaponVehicleTank(Other).projectileVelocity = TankMortarProjectileVelocity;
@@ -779,12 +777,13 @@ function string MutateSpawnCombatRoleClass(Character c) {
     c.team().combatRoleData[1].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorMedium", class'class')).default.AllowedWeapons;
     c.team().combatRoleData[2].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorHeavy", class'class')).default.AllowedWeapons;
 
-    for(i = 0; i < c.team().combatRoleData.length; i++)
-    for(j = 0; j < c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons.length; j++) {
+    for(i = 0; i < c.team().combatRoleData.length; i++) {
+		for(j = 0; j < c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons.length; j++) {
                       
-        if(c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].typeClass == Class'EquipmentClasses.WeaponBurner')
-            c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].quantity = 25 + i *5;
-    }    
+			if(c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].typeClass == Class'EquipmentClasses.WeaponBurner')
+				c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].quantity = 25 + i *5;
+		}
+	}
     return Super.MutateSpawnCombatRoleClass(c);
 }
 
@@ -794,7 +793,7 @@ simulated function Mutate(string Command, PlayerController Sender) {
     *   Mutate function allows clients to execute functions defined in the mutator tribesmod. (such as enabling troc).
     *   Mutate function is required to be simulated for clients to call it.          
     *
-    *    Time Stamp: 20-02-15 15:31:46
+    *	Time Stamp: 20-02-15 15:31:46
     */
     
     if(allowMutate && Sender.AdminManager.bAdmin) {
