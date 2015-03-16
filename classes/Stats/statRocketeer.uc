@@ -1,11 +1,12 @@
-class statRocketeer extends Gameplay.ExtendedStat config(tribesmodStats);
+class statRocketeer extends Gameplay.ExtendedStat;
 
 // Rocketeer reward
+
+//minDistance=4000                  (= 50 ingame Units)
 
 defaultproperties
 {
      minTargetSpeed=115.000000
-     minDistance=750
      minDamage=45.000000
      stylePointsPerStat=1
      logLevel=3

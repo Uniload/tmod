@@ -8,11 +8,8 @@ function ProjectileTouch(Actor Other, vector TouchLocation, vector TouchNormal)
         {
         damageAmt = SniperSensorDmg;
     }
-
     super.ProjectileTouch(Other, TouchLocation, TouchNormal);
 }
-
-// damageTypeClass=Class'tmodSniperProjectileDamageType'
 
 defaultproperties
 {

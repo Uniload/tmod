@@ -1,6 +1,5 @@
 class tmodTank extends VehicleClasses.VehicleTank config(tribesmodSettings);
 
-
 simulated function bool canArmorOccupy(VehiclePositionType position, Character character)
 {
     if (character.armorClass == None)
@@ -10,7 +9,7 @@ simulated function bool canArmorOccupy(VehiclePositionType position, Character c
     }
 
     if(character.ArmorClass == class'EquipmentClasses.ArmorHeavy')
-    return true;
+        return true;
     else
         return true;
     
@@ -18,10 +17,10 @@ simulated function bool canArmorOccupy(VehiclePositionType position, Character c
 
 defaultproperties
 {
+     Health=1500.000000
      boostStrength=16000000.000000
      treadLength=230.000000
      throttleToVelocityFactor=35.000000
      treadGainFactor=0.090000
      treadVehicleGravityScale=2.000000
-     Health=1500.000000
 }

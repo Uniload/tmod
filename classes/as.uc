@@ -24,14 +24,34 @@
 *       - removes the base turrets
 *       - Adds stat classes to the game
 *       - Adds mutate commands. See function Mutate()
-*       
+*       - Increased the grapple roundsPerSecond slightly to reduce the chance for the grapple bug to occur.
+*       - Fixes pack reload animation (though it is still buggy and will not work when the reload time is modified ingame (needs some more testing)
+*       - Fixed Repair pack emmiter's max range (was bugged in promod)
+*       - Fixes shield pack texture when getting hit and carrying a shield pack (will now display a shader around the player's model when activating the pack, or when getting hit)
+*       - Changed the flag's texture to hologram shaders. This seems to only work when running the mutator on a listen server (= not a dedicated server)
+*
+*
+*
+*   New Console commands (only executable when logged into admins, not case sensitive):
+*
+*       ConsoleCommand("mutate test")               helloWorld text will appear in the chat.
+*       ConsoleCommand("mutate time [value]")       Sets the gametime to [value]
+*       ConsoleCommand("mutate tournament")         Toggles between tournament mode on or off. Takes effect at next map.
+*       ConsoleCommand("mutate troc")               Toggles between the default gameplay and troc-mode (enhanced energyPack boost)
+*
+*
+*
+*   Extra:  Relation between distance and ingame Units
+*
+*       100 Units = 1,25 (config value)
+* 
 */
-
-// Some unresolved issue with UCC forces the use of the name "as.uc" instead of another class name
 
 //#EndBlock
 
 class as extends Gameplay.Mutator config(tribesmodSettings); 
+// Some unresolved issue with UCC forces the use of the name "as.uc" instead of another class name.
+
 
 //#StartBlock ========================================VARIABLES===============================================
 /* @effect ... variables
@@ -41,20 +61,24 @@ class as extends Gameplay.Mutator config(tribesmodSettings);
 */
 
 const MOD_VERSION = "tribesmod";
-// function modifyVehicles()
+//used to modify the flag's texture. Only works on listen servers (see Class Info)
+var private Material transFlagBE;
+var private Material transFlagPNX;
+var private Material transFlagIMP;
+//function modifyVehicles()
 var config bool EnablePod;
 var config bool EnableRover;
 var config bool EnableRoverGun;     //toggles between retail rover with anti-AA gun and rover without gun.
 var config bool EnableAssaultShip;
 var config bool EnableTank;
-// function modifyPlayerStart()
+//function modifyPlayerStart()
 var config class<Gameplay.CombatRole> SpawnCombatRole;
 var config int SpawnInvincibility;
-// function modifySpinfusorWeaponClass
+//function modifySpinfusorWeaponClass
 var config float SpinfusorPIVF;
 var config int SpinfusorProjectileVelocity;
 var config int SpinfusorAmmoUsage;
-// function modifySniperRifleWeaponClass
+//function modifySniperRifleWeaponClass
 var public int SnipeAmmoCount;
 var public int SnipeAmmoUsage;
 var public float SnipeLife;
@@ -63,7 +87,14 @@ var config bool useDefaultBurner;
 var config float PlasmaPIVF;
 var config int PlasmaVelocity;
 var config int PlasmaEnergyUsage;
-// function removeBaseTurrets()
+//function actorReplace()
+var config float BlasterSpread;
+var config int BlasterBulletAmount;
+var config float BlasterRoundsPerSecond;
+var config float BlasterEnergyUsage;
+var config float BlasterVelocity;
+var config float BlasterPIVF;
+//function removeBaseTurrets()
 var config bool RemoveBaseTurret;
 //function disableMineTurret()
 var config bool DisableDeployableTurrets;
@@ -87,13 +118,12 @@ var config int TimerInterval;
 var config bool SniperPlayerThreshold;
 var config int SniperTeamPlayerMin;
 //function Mutate()
-var config bool allowMutate;
+var globalconfig bool allowMutate;          // TEST: cannot be changed with console commands
 var private bool trocIsOn;
+var private bool bTournamentMode;
 //function actorReplace()
 var public float EnergyBoost;
 var public float EnergyDuration;
-var config float ShieldPackActive;
-var config float ShieldPackPassive;
 //function MutateSpawnCombatRoleClass()
 var config float HOknockbackscale;
 var config int HOHealth;
@@ -102,7 +132,9 @@ var config bool TankUsesMortarProjectile;
 var config int TankDefaultProjectileVelocity;
 var config int TankMortarProjectileVelocity;
 var config bool EnableDegrapple;
+
 //#EndBlock 
+
 
 //#StartBlock ========================================FUNCTIONS===============================================
 
@@ -157,6 +189,11 @@ simulated event PreBeginPlay() {
     */
     
     super.PreBeginPlay();
+    
+    log("************************");
+    log("***    TribesMod     ***");
+    log("************************");
+    
     modifyCharacters();
     modifyPlayerStart();
     modifyFlagThrower();
@@ -165,6 +202,8 @@ simulated event PreBeginPlay() {
     removeBaseTurrets();
     disableMineTurret();
     modifyStats();
+    //native engine function
+    //SaveConfig();
 }
 
 function modifyCharacters() {
@@ -204,11 +243,12 @@ function modifyPlayerStart() {
         }    
     }
 }
-    
-function modifyFlagThrower() {
+
+simulated function modifyFlagThrower() {
     /* @effect ... function
     *
-    *   Allows the administrator to modify flag throwing properties. The default flag classes will be overwritten with the tribesmod clases.     
+    *   Allows the administrator to modify flag throwing properties. The default flag classes will be overwritten with the tribesmod clases.
+    *   Flag textures will also be overwritten (currently only if the mod is running on a listen-server) 
     *
     *   Time Stamp: 14-02-15 15:24:24
     */ 
@@ -216,20 +256,42 @@ function modifyFlagThrower() {
     local GameClasses.CaptureFlagImperial ImpFlag;
     local GameClasses.CaptureFlagBeagle BEFlag;
     local GameClasses.CaptureFlagPhoenix PnxFlag;
-
-    foreach AllActors(class'GameClasses.CaptureFlagImperial', ImpFlag)
-        if(ImpFlag != None)
+    
+    foreach AllActors(class'GameClasses.CaptureFlagImperial', ImpFlag)  
+        if(ImpFlag != None) {    
             ImpFlag.carriedObjectClass = Class'tmodFlagThrowerImperial';
-            
+            ImpFlag.Skins[0]=transFlagIMP;        //flagpole
+            ImpFlag.Skins[1]=transFlagIMP;        //flag
+        }
+       
     foreach AllActors(class'GameClasses.CaptureFlagBeagle', BEFlag)
-        if(BEFlag != None)
+        if(BEFlag != None) {
             BEFlag.carriedObjectClass = Class'tmodFlagThrowerBeagle';
-            
-    foreach AllActors(class'GameClasses.CaptureFlagPhoenix', PnxFlag)
-        if(PnxFlag != None)
-            PnxFlag.carriedObjectClass = Class'tmodFlagThrowerPhoenix';   
-}
+            BEFlag.Skins[0]=transFlagBE;
+            BEFlag.Skins[1]=transFlagBE;
+        }
         
+    foreach AllActors(class'GameClasses.CaptureFlagPhoenix', PnxFlag)
+        if(PnxFlag != None) {      
+            PnxFlag.carriedObjectClass = Class'tmodFlagThrowerPhoenix';  
+            PnxFlag.Skins[0]=transFlagPNX;
+            PnxFlag.Skins[1]=transFlagPNX;
+        }
+}
+
+/*
+function modifyFlagStand() {
+    /* @effect ... function
+    *
+    *   Modify flag stands to spawn our modified flag classes   
+    *
+    *   Time Stamp: 16-03-15 11:18:22
+    */ 
+    
+    TODO:
+}
+*/
+    
 function modifyVehicles() {
     /* @effect ... function
     *   
@@ -245,40 +307,39 @@ function modifyVehicles() {
         if(EnablePod) {
             if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
             vehiclePad.vehicleClass = class'tribesmod.tmodPod';
-        }
-            else if(!EnablePod) {
+        } else if(!EnablePod) {
                 if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
                     vehiclePad.setSwitchedOn(false);
-            }
+        }
+                
         if(EnableRover) {
             if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy') {
                 if(EnableRoverGun) {
                     vehiclePad.vehicleClass = class'tribesmod.tmodDefaultBuggy';
                     } else {
                     vehiclePad.vehicleClass = class'tribesmod.tmodBuggy';
-                    }
+                }
             }
-        }
-            else if(!EnableRover) {
+        } else if(!EnableRover) {
                 if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy')
                     vehiclePad.setSwitchedOn(false);
-            }               
+        } 
+                
         if(EnableAssaultShip) {
               if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
             vehiclePad.setSwitchedOn(true);
-        }
-            else if(!EnableAssaultShip) {
+        } else if(!EnableAssaultShip) {
                 if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
                     vehiclePad.setSwitchedOn(false);
-            }
+        }
+                
         if(EnableTank) {
               if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
               vehiclePad.vehicleClass = class'tribesmod.tmodTank';
-        }
-            else if(!EnableTank) {
+        } else if(!EnableTank) {
                 if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
                     vehiclePad.setSwitchedOn(false);
-            }
+        }
     }
 
 }
@@ -310,6 +371,7 @@ function removeBaseTurrets() {
     /* @effect ... function
     *   
     *   Removes base turrets (not the deployable ones)
+    *   | if (RemoveBaseTurret) 
     *
     *   Time Stamp: 14-02-15 15:25:58
     */
@@ -330,6 +392,7 @@ function disableMineTurret() {
     /* @effect ... function
     *   
     *   Disables the deployable Turret and Mine stations
+    *   | if (DisableDeployableTurrets && DisableMines)
     *
     *   Time Stamp: 14-02-15 15:26:30
     */
@@ -360,15 +423,15 @@ function modifyStats() {
     
     M = ModeInfo(Level.Game);
   
-    
     if(M != None && BonusStatsOn) {
-        //search for the weapon stat and set it's extended stat
+        //search for the already existing weapon stat and overwrite it
         for(i = 0; i < M.extendedProjectileDamageStats.Length; ++i) {
             //search by damage type
             if(M.extendedProjectileDamageStats[i].damageTypeClass == Class'EquipmentClasses.ProjectileDamageTypeSpinfusor') {
                 M.extendedProjectileDamageStats[i].extendedStatClass = Class'statMA';
             }
         }   
+        //Same as above: Search in the array of default stats, look for the correct weaponDamageType class, and modify the found stat.
         for(i = 0; i < M.projectileDamageStats.Length; ++i) {
             if(M.projectileDamageStats[i].damageTypeClass == Class'EquipmentClasses.ProjectileDamageTypeSniperRifle') {
                 M.projectileDamageStats[i].damageTypeClass = Class'tribesmod.tmodSniperProjectileDamageType';
@@ -377,7 +440,7 @@ function modifyStats() {
         }
     
         statCount = M.extendedProjectileDamageStats.Length;
-        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We have 7 new stats
+        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We have 8 new stats
     
         //E-Blade       1
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodBladeProjectileDamageType';
@@ -385,10 +448,10 @@ function modifyStats() {
         ++statCount;
     
         // GLMA         2
-        //M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'EquipmentClasses.ProjectileDamageTypeGrenadeLauncher'; issue with GLma stat
-        M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodProjectileGrenadeLauncherDamageType';
+        M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'EquipmentClasses.ProjectileDamageTypeGrenadeLauncher';
         M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statGLMA';
-    
+        ++statCount;
+        
         // MMA          3
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'EquipmentClasses.ProjectileDamageTypeMortar';
         M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statMMA';
@@ -413,6 +476,11 @@ function modifyStats() {
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'EquipmentClasses.ProjectileDamageTypeSpinfusor';
         M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statOMG';
         ++statCount;
+        
+        //Pointer Range (need a better way to display the range)        8
+        //M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodPointerDamageType';
+        //M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statPointer';
+        //++statCount;
     }
 }
 
@@ -427,56 +495,64 @@ function PostBeginPlay() {
     
     super.PostBeginPlay();
 
-    if(!tournamentOn(" ") && CTF()) {   // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true, run in tournament Mode        
+    if(!tournamentOn(" ") && CTF())     // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true, run in tournament Mode 
+    {          
     UpdateMTDevices();
     UpdateBRDevices();
     SniperRifleAllowance();
     SetTimer(TimerInterval, true);
     }
+    
+    SaveConfig();
 }
 
 function Timer() {
     /* @effect ... function
     *   
-    *   Server-side timer (Might not be true because PostBeginPlay() is a simulated event). Also takes care of the anti-teamkill system
+    *   Server-side timer. Also takes care of the anti-teamkill system
     *
     *   Time Stamp: 15-02-15 15:28:06
     */
     
     local Controller C;
-    local int i, s;
+    local int s;
     local PlayerReplicationInfo P;
   
-    if(MTBalance && !EnableMT()) {
+    if(MTBalance && !EnableMT())
+    {
         MTBalance = false;
         UpdateMTDevices();
         Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 100);
-        
-        } else if(!MTBalance && EnableMT()) {
+    } else if(!MTBalance && EnableMT())
+        {
             MTBalance = true;
             UpdateMTDevices();
             Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 101);
-    }
-    if(BaseRape && !EnableBR()) {
+        }
+    
+    if(BaseRape && !EnableBR())
+    {
         BaseRape = false;
         UpdateBRDevices();
         Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 103);
-        
-        } else if(!BaseRape && EnableBR()) {
+    } else if(!BaseRape && EnableBR())
+        {
             BaseRape = true;
             UpdateBRDevices();
             Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 104);
-    }
-    if(SniperPlayerThreshold && !EnableSniperRifle()) {
+        }
+    
+    if(SniperPlayerThreshold && !EnableSniperRifle())
+    {
         SniperPlayerThreshold = false;
         SniperRifleAllowance();
         Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 108);
-        
-        } else if(!SniperPlayerThreshold && EnableSniperRifle()) {
+    } else if(!SniperPlayerThreshold && EnableSniperRifle())
+        {
             SniperPlayerThreshold = true;
             SniperRifleAllowance();
             Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 109);
-    }
+        }
     
     //Anti-TK
     for (C = Level.ControllerList; C != none; C = C.nextController) {
@@ -506,7 +582,7 @@ function Timer() {
         }
     }
 }
-    
+   
 function bool EnableMT() {
     /* @effect ... function
     *   
@@ -644,13 +720,17 @@ function SniperRifleAllowance() {
     }               
 }
 
-simulated event Actor ReplaceActor(Actor Other) {
+event Actor ReplaceActor(Actor Other) {
     /* @effect ... event
     *   
     *   find actors and replace their classes
-    *   Note: Actor ReplaceActor() is a simulated event, this will cause timer-based settings (like weapon firerate) to be occasionnaly out of sync with the server.
+    *   Note: Actor ReplaceActor() was a simulated event, this caused timer-based settings (like weapon firerate) to be occasionnaly out of sync with the server.
     *
-    *   Time Stamp: 22-02-15 15:30:54
+    *   Tested the simulated property of the ReplaceActor event:
+    *   Got unexpected behaviour from actors replaced in this event (more specifically the spinfusor projectile that seemed to have a different inherited velocity factor)
+    *   Went back to a public event (UCC considers events and functions to be the same thing)
+    *
+    *   Time Stamp: 27-02-15 17:17:52
     */
  
     if(Other.IsA('WeaponSpinfusor')) {    
@@ -661,19 +741,28 @@ simulated event Actor ReplaceActor(Actor Other) {
         return Super.ReplaceActor(Other);
     }
     
-    if(Other.IsA('WeaponSniperRifle')) {
+    /*if(Other.IsA('WeaponSniperRifle')) {
         WeaponSniperRifle(Other).projectileClass = Class'tmodProjectileSniperRifle';
         WeaponSniperRifle(Other).LifeSpan = SnipeLife;
         WeaponSniperRifle(Other).ammoCount = SnipeAmmoCount;
         WeaponSniperRifle(Other).ammoUsage = SnipeAmmoUsage;
         return Super.ReplaceActor(Other);
+    }*/
+    
+    if(Other.IsA('WeaponSniperRifle')) {
+        Other.Destroy();
+        log("Destroyed orig sniper, replaced with beamer");
+        return ReplaceWith(Other, MOD_VERSION $ ".tmodWeaponPointer");
     }
     
     if(Other.IsA('Grappler')) {
         if(EnableDegrapple)
             Grappler(Other).projectileClass = Class'tmodDegrappleProjectile';
         else
-            Grappler(Other).projectileClass = Class'Gameplay.GrapplerProjectile';
+            Grappler(Other).projectileClass = Class'tmodGrapplerProjectile';
+            
+        // Increased grapple RPS slightly to reduce the chance for the grapple bug to occur.
+        Grappler(Other).roundsPerSecond = 1.0;
         return Super.ReplaceActor(Other);
     }
     
@@ -697,6 +786,25 @@ simulated event Actor ReplaceActor(Actor Other) {
         return Super.ReplaceActor(Other);
     }
     
+    if(Other.IsA('WeaponBuckler')) {        // from compmod07
+        WeaponBuckler(Other).checkingDamage = 0;//15
+        WeaponBuckler(Other).checkingDmgVelMultiplier = 0;//0.01
+        WeaponBuckler(Other).checkingMultiplier = 0;//300
+        WeaponBuckler(Other).minCheckRate = 0;//0.2
+        WeaponBuckler(Other).minCheckVelocity = 0;//800
+    }
+    
+    if(Other.IsA('WeaponBlaster')) {
+        WeaponBlaster(Other).projectileClass = Class'tmodProjectileBlaster';
+        WeaponBlaster(Other).spread = BlasterSpread;
+        WeaponBlaster(Other).numberOfBullets = BlasterBulletAmount;
+        WeaponBlaster(Other).roundsPerSecond = BlasterRoundsPerSecond;
+        WeaponBlaster(Other).energyUsage = BlasterEnergyUsage;
+        WeaponBlaster(Other).projectileVelocity = BlasterVelocity;
+        WeaponBlaster(Other).projectileInheritedVelFactor = BlasterPIVF;
+        return Super.ReplaceActor(Other);
+    }
+    
     if(!useDefaultBurner) {
         if(Other.IsA('WeaponBurner')) {
             WeaponBurner(Other).projectileClass = Class'tmodProjectilePlasma';
@@ -708,11 +816,11 @@ simulated event Actor ReplaceActor(Actor Other) {
         }
     }
     
-    if(Other.IsA('WeaponHandGrenade')) {
-        //Does not work, possibly overwritten by map classes. (though "admin set (package)(property)(value)" does work)
+    /*if(Other.IsA('WeaponHandGrenade')) {
+        //Does not work
         Other.Destroy();
         return ReplaceWith(Other, MOD_VERSION $ ".tmodWeaponHandGrenade");
-    }
+    }*/
     
     if(Other.IsA('WeaponEnergyBlade')) {
         Other.Destroy();
@@ -744,32 +852,32 @@ simulated event Actor ReplaceActor(Actor Other) {
         return Super.ReplaceActor(Other);
     }
     
-    if(Other.IsA('EnergyPack')) {    
-        EnergyPack(Other).boostImpulsePerSecond = EnergyBoost;
-        EnergyPack(Other).durationSeconds = EnergyDuration;
-        return Super.ReplaceActor(Other);
+    if(Other.IsA('SpeedPack')) {
+        Other.Destroy();
+        return ReplaceWith(Other, MOD_VERSION $ ".tmodPackSpeed");
     }
     
     if(Other.IsA('ShieldPack')) {
-        ShieldPack(Other).activeFractionDamageBlocked = ShieldPackActive;   //was .75
-        ShieldPack(Other).passiveFractionDamageBlocked = ShieldPackPassive; //was .2
-        return Super.ReplaceActor(Other);
+        Other.Destroy();
+        return ReplaceWith(Other, MOD_VERSION $ ".tmodPackShield");
     }
     
     if(Other.IsA('RepairPack')) {
         Other.Destroy();
         return ReplaceWith(Other, MOD_VERSION $ ".tmodPackRepair");
     }
-        
+    
+    if(Other.IsA('EnergyPack')) {    
+        EnergyPack(Other).boostImpulsePerSecond = EnergyBoost;
+        EnergyPack(Other).durationSeconds = EnergyDuration;
+        return Super.ReplaceActor(Other);
+    }
+   
     if(Other.IsA('CloakPack')) {
+    // anti gameplay hack
         Other.Destroy();
         return ReplaceWith(Other, MOD_VERSION $ ".tmodAntiCloak");
-    }        
-    
-    /*if(Other.IsA('InventoryStationAccess')) {
-        Other.Destroy(); 
-        return ReplaceWith(Other, MOD_VERSION $ ".tmodInv"); 
-    }*/
+    }    
     
     return Super.ReplaceActor(Other);
 }
@@ -791,11 +899,13 @@ function string MutateSpawnCombatRoleClass(Character c) {
     c.team().combatRoleData[2].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorHeavy", class'class')).default.AllowedWeapons;
 
     for(i = 0; i < c.team().combatRoleData.length; i++)
-    for(j = 0; j < c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons.length; j++) {
-                      
-        if(c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].typeClass == Class'EquipmentClasses.WeaponBurner')
-            c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].quantity = 25 + i *5;
-    }    
+    {
+        for(j = 0; j < c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons.length; j++)
+        {
+           if(c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].typeClass == Class'EquipmentClasses.WeaponBurner')
+               c.team().combatRoleData[i].role.default.armorClass.default.AllowedWeapons[j].quantity = 25 + i *5;
+        }    
+    }
     return Super.MutateSpawnCombatRoleClass(c);
 }
 
@@ -807,30 +917,83 @@ simulated function Mutate(string Command, PlayerController Sender) {
     *
     *    Time Stamp: 20-02-15 15:31:46
     */
+
+    local string ParsedString;
     
+    // TODO: Anonym adminlogin
+    
+    
+    //  All defined commands require admin privileges to be executed
     if(allowMutate && Sender.AdminManager.bAdmin) {
     
-        if(Command == "test") {
-            Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 110);
-        }
-        if(Command == "adminTest" && Sender.AdminManager.bAdmin) {
-            Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 111);
-        }
-        if(Command == "troc") {
-            
-            if(!trocIsOn) {    
-                EnergyBoost = 750000.000000;
-                EnergyDuration = 0.100000;
+        //  (admin) mutate troc
+        if(Command ~= "troc") {
+            if(!trocIsOn)
+            {    
+                energyBoost = 750000.000000;
+                energyDuration = 0.100000;
                 Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 112);                
                 trocIsOn = true;
                 } else {
-                EnergyBoost = 75000.000000;
-                EnergyDuration = 1.000000;
+                energyBoost = 75000.000000;
+                energyDuration = 1.000000;
                 Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 113);                
                 trocIsOn = false;
             }
         }
+        
+        // (admin) mutate time [int]
+        else if (Left(Command, 4) ~= "time") {
+            parsedString = Locs(Command);
+            parsedString -= "time ";
+            
+            if ( int(parsedString) < 0 )
+                parsedString = "0";
+            
+            Sender.ConsoleCommand("set rounddata duration" @ parsedString);
+        }
+        
+        // (admin) mutate tournament
+        else if (Command ~= "tournament") {
+            
+            if(!bTournamentMode) {
+                //Cast broadcast msg to sender
+                Sender.ClientMessage("Tournament Mode is enabled for the next maps");
+                Sender.ConsoleCommand("admin set multiplayergameinfo bTournamentMode 1");
+                bTournamentMode = true;
+                } else {
+                //Cast broadcast msg to sender
+                Sender.ClientMessage("Tournament Mode is disabled for the next maps");
+                Sender.ConsoleCommand("admin set multiplayergameinfo bTournamentMode 0");
+                bTournamentMode = false;
+            }
+        }    
+        
+        //  (admin) mutate test
+        else if (Command ~= "HelloWorld") {
+            Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 110);
+        }  
+            
+        //  (admin) mutate adminTest
+        else if (Command ~= "admintest") {
+            Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 111);
+        }
+        
+        else if (Command ~= "flagDebug") {
+            modifyFlagThrower();
+        }
     }
+    
+    else if (!allowMutate) {
+        // cast error message to Sender   
+        Sender.ClientMessage("Mutate commands are disabled");
+    }
+    
+    else if (!Sender.AdminManager.bAdmin) {
+       // cast error message to Sender
+       Sender.ClientMessage("You do not have the required permission to execute this command");
+    }
+    
 }
 
 //#EndBlock
@@ -847,6 +1010,9 @@ simulated function Mutate(string Command, PlayerController Sender) {
 
 defaultproperties {
     
+    transFlagBE=Shader'MPGameObjects.HologramBeagleFalbackShader'
+    transFlagPNX=Shader'MPGameObjects.HologramPhoenixFalbackShader'
+    transFlagIMP=Shader'MPGameObjects.HologramImperialFalbackShader'
     SpawnCombatRole = class'EquipmentClasses.CombatRoleLight'
     SpawnInvincibility = 2
     HOknockbackscale=1.175000
@@ -876,9 +1042,12 @@ defaultproperties {
     PlasmaPIVF = 0.500000
     PlasmaVelocity = 4900
     PlasmaEnergyUsage = 10
-    
-    ShieldPackActive = 0.600000
-    ShieldPackPassive = 0.130000
+    BlasterSpread=2.200000
+    BlasterBulletAmount=7
+    BlasterRoundsPerSecond=1.200000
+    BlasterEnergyUsage=1.500000
+    BlasterVelocity=18000.000000
+    BlasterPIVF=0.000000
     
     RemoveBaseTurret = false   
     DisableDeployableTurrets = false
@@ -888,17 +1057,18 @@ defaultproperties {
     RunInTournament = true
     allowMutate = true
     trocIsOn = false
+    bTournamentMode = false
     EnableDegrapple = true
     
     MTBalance = true
     MTTeamPlayerMin = 3
     BRTeamPlayerMin = 6
-    BaseRape = true   
+    BaseRape = false   
     TeamKillBanUser = false
     MaxTeamKills = 3
     TimerInterval = 45
     
     bAddToServerPackages = true             
     FriendlyName = "TribesMod, created by Cobra."
-    Description = "Mutator code: tribesmod.as, settings in tribesmodSettings.ini and tribesmod.int"
+    Description = "Mutator code: tribesmod.as, settings in tribesmod.ini and tribesmod.int"
 }

@@ -1,6 +1,26 @@
 class tmodBuggy extends VehicleClasses.VehicleBuggy config(tribesmodSettings);
 
 
+var config int roverHealth;
+
+
+simulated function PostBeginPlay() {
+    
+    SetProperties();
+    SaveConfig();
+}
+
+
+simulated function SetProperties()
+{
+    local tmodBuggy Rover;
+    
+    foreach AllActors(class'tmodBuggy', Rover)
+    {
+        Rover.Health = roverHealth;
+    }
+}
+
 simulated function bool canArmorOccupy(VehiclePositionType position, Character character)
 {
     if (character.armorClass == None)
@@ -9,8 +29,8 @@ simulated function bool canArmorOccupy(VehiclePositionType position, Character c
         return true;
     }
     if((character.ArmorClass == class'EquipmentClasses.ArmorHeavy') && (position == VP_DRIVER))
-        // changed this to true fot easy testing
-        return true;
+        // changed this to true for easy testing
+        return false;
     else
         return true;
     
@@ -46,6 +66,6 @@ function enableAbandonmentDestruction(float periodSeconds)
     
 defaultproperties
 {
-gunnerWeaponClass=None
-Health=1500
+    gunnerWeaponClass=None
+    roverHealth=1500
 }

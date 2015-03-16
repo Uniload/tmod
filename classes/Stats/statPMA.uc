@@ -1,4 +1,4 @@
-Class statPMA extends Gameplay.ExtendedStat config(tribesmodStats);
+Class statPMA extends Gameplay.ExtendedStat;
 
 //Plasma MA stat
 

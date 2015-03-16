@@ -1,6 +1,5 @@
 class tmodDefaultBuggy extends VehicleClasses.VehicleBuggy config(tribesmodSettings);
 
-
 simulated function bool canArmorOccupy(VehiclePositionType position, Character character)
 {
     if (character.armorClass == None)
@@ -9,7 +8,7 @@ simulated function bool canArmorOccupy(VehiclePositionType position, Character c
         return true;
     }
     if((character.ArmorClass == class'EquipmentClasses.ArmorHeavy') && (position == VP_DRIVER))
-        return true;
+        return false;
     else
         return true;
     
@@ -46,6 +45,6 @@ function enableAbandonmentDestruction(float periodSeconds)
     
 defaultproperties
 {
-gunnerWeaponClass=Class'AntiAircraftWeapon'
-Health=850
+    Health=850
+    gunnerWeaponClass=Class'AntiAircraftWeapon'
 }

@@ -11,6 +11,11 @@ simulated function int getMaxAmmo(class<Weapon> weaponClass){
 }
 */
 
+//function PostBeginPlay()
+//{
+    //    SaveConfig();   
+//}
+
 simulated event BreakGrapple()
 {
     // call this when the grapple breaks because it will play the breaking sound

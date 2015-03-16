@@ -2,26 +2,42 @@ class tmodFlagThrowerImperial extends GameClasses.FlagThrowerImperial config (tr
 
 var config float FlagInheritedVelocity;
 var config int FlagVelocity;
+var config Material alternateTexture;
+var config bool useAlternativeTexture;
 
-function PostBeginPlay()
+
+
+simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-        SetFlagThrow();
+    SetFlagThrow();
+    SaveConfig();
 }
 
-function SetFlagThrow()
-
+simulated function SetFlagThrow()
 {
-        local tmodFlagThrowerImperial ImpFlag;
-        foreach AllActors(class'tmodFlagThrowerImperial', ImpFlag)
-            if(ImpFlag != None) {
-                ImpFlag.projectileInheritedVelFactor = FlagInheritedVelocity;//was .8
-                ImpFlag.projectileVelocity = FlagVelocity;//was 800
+    local tmodFlagThrowerImperial ImpFlag;
+    foreach AllActors(class'tmodFlagThrowerImperial', ImpFlag)
+    {
+        if(ImpFlag != None)
+        {
+            ImpFlag.projectileInheritedVelFactor = FlagInheritedVelocity;       //Default was = 0.8
+            ImpFlag.projectileVelocity = FlagVelocity;                          //Default was = 800
+                
+            if (useAlternativeTexture)
+            {
+                ImpFlag.Skins[0]=alternateTexture;
+                ImpFlag.Skins[1]=alternateTexture;
+                //log("[tmodFlagThrowerImperial]: set new flagThrow skin");
             }
+        }
+    }
 }
 
 defaultproperties
 {
-FlagInheritedVelocity=0.800000
-FlagVelocity=800.000000
+    useAlternativeTexture=true   
+    alternateTexture=Shader'MPGameObjects.HologramImperialFalbackShader'
+    FlagInheritedVelocity=0.800000
+    FlagVelocity=800.000000
 }

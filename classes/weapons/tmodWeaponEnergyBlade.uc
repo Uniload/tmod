@@ -20,7 +20,7 @@ simulated protected function Projectile makeProjectile(Rotator fireRot, Vector f
     local PlayerController pc;
 
     local Character weaponOwner;
-    local PlayerCharacterController enemyPCC;
+    //local PlayerCharacterController enemyPCC;
 
     weaponOwner = Character(rookOwner);
 

@@ -1,4 +1,4 @@
-Class statEBMA extends Gameplay.ExtendedStat config(tribesmodStats);
+Class statEBMA extends Gameplay.ExtendedStat;
 
 //E-Blade Knife Midair stat
 defaultproperties

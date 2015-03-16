@@ -6,6 +6,9 @@ var() float radiusDamageAmt;
 var() float radiusDamageSize;
 var() float radiusDamageMomentum;
 
+/**
+ * Unregistered hit fix. From NRBgone.
+*/
 function ProjectileTouch(Actor Other, vector TouchLocation, vector TouchNormal){
     super.ProjectileTouch(Other, TouchLocation, TouchNormal);
 }
@@ -18,7 +21,7 @@ simulated function ProjectileHit(Actor Other, vector TouchLocation, vector Norma
 
 simulated function endLife(Actor HitActor, vector TouchLocation, Optional vector TouchNormal)
 {
-    local float speed;
+    //local float speed;
     local Vector direction;
 
     SpawnBurningArea();

@@ -3,6 +3,11 @@ class tmodDegrappleProjectile extends Gameplay.GrapplerProjectile;
 var float Health;
 var float burningDamagerPerSecond;
 
+function PostBeginPlay()
+{
+    SaveConfig();
+}
+
 function PostTakeDamage(float Damage, Pawn EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional float projectileFactor)
 {
     Health -= Damage;
@@ -13,6 +18,16 @@ function PostTakeDamage(float Damage, Pawn EventInstigator, vector HitLocation, 
     Super.PostTakeDamage(Damage, EventInstigator, HitLocation, Momentum, DamageType, projectileFactor);
 }
 
+/**
+ * Unregistered hit fix. From NRBgone.
+*/
+function ProjectileTouch(Actor Other, vector TouchLocation, vector TouchNormal){
+    super.ProjectileTouch(Other, TouchLocation, TouchNormal);
+}
+
+/**
+ * Server crash fix. From franga_v1.
+*/
 simulated function simulatedAttach(Actor Other, vector TouchLocation)
 {
     local Character c;

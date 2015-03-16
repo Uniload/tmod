@@ -1,11 +1,12 @@
-class tmodDeployedCatapult extends Gameplay.DeployedCatapult;
+class tmodDeployedCatapult extends Gameplay.DeployedCatapult config(tribesmodSettings);
 
+//Health=400
 defaultproperties
 {
+Health=400
 localizedName="Deployed Catapult"
 damagedHealthThreshold=0.750000
 functionalHealthThreshold=0.050000
-Health=400
 bWasDeployed=true
 bNoDelete=false
 bIgnoreEncroachers=true
@@ -20,4 +21,8 @@ bReflective=False
 catapultInfluence=0.500000
 throwForce=125000.000000
 verticalInfluence=0.500000
+Mesh=SkeletalMesh'Deployables.DepCatapult'
+destroyedExplosionClass=Class'ExplosionClasses.ExplosionSmall'
+radarinfoClass=Class'HudClasses.RadarInfoDeployableCatapult'
+personalShieldClass=None
 }

@@ -1,4 +1,4 @@
-Class statGLMA extends Gameplay.ExtendedStat config(tribesmodStats);
+Class statGLMA extends Gameplay.ExtendedStat;
 
 //Grenade Launcher MA stat
 

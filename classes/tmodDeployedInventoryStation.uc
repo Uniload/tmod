@@ -2,10 +2,10 @@ class tmodDeployedInventoryStation extends Gameplay.DeployedInventoryStation;
 
 defaultproperties
 {
+Health=300
 localizedName="Deployed Inventory Station"
 damagedHealthThreshold=0.750000
 functionalHealthThreshold=0.050000
-Health=300
 destroyedExplosionClass=Class'ExplosionClasses.ExplosionSmall'
 personalShieldClass=None
 Mesh=SkeletalMesh'Deployables.DepInvStation'
