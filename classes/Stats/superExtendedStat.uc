@@ -1,4 +1,4 @@
-class superExtendedStat extends Gameplay.Stat;
+class superExtendedStat extends Gameplay.ExtendedStat;
 
 var()   int     minTargetAltitude;
 var()   float   minTargetSpeed;
@@ -7,6 +7,10 @@ var()   int     minDistance;
 var()   int     maxDistance;
 var()   float   minDamage;
 var()   bool    bAllowTargetInVehicleOrTurret;
+
+//Test
+var int damage;
+var int projectileDistance;
 
 
 static function bool isEligible(Controller Source, Controller Target, float damageAmount)
@@ -32,10 +36,6 @@ static function bool isEligible(Controller Source, Controller Target, float dama
     // Minimum distance check
     relativeDistance = VSize(Source.Pawn.Location - Target.Pawn.Location);
     
-    //===============================MODIFIED CODE==================================
-    range = (relativeDistance / 100) * 1.25;
-    ///self.personalMessage="Range:" & range;
-    
     if (relativeDistance < default.minDistance)
         return false;
 
@@ -60,10 +60,25 @@ static function bool isEligible(Controller Source, Controller Target, float dama
         return false;
 
     // If this point is reached, all tests passed and the stat is awarded
+    
+    //===============================MODIFIED CODE==================================
+    range = (relativeDistance / 100) * 1.25;
+
+    //setValues(Source, Target, damageAmount, range);
+    
     return true;
 }
+
+/*function setValues(int damageDealt, int distance) {
+    
+    damage = damageDealt;
+    projectileDistance = distance;
+}*/
 
 defaultproperties
 {
     personalMessage="superExtendedStat message"
+
+    damage = 0
+    projectileDistance = 0
 }

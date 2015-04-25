@@ -1,4 +1,4 @@
-class tmodWeaponEnergyBlade extends EquipmentClasses.WeaponEnergyBlade config(tribesmodSettings); //thanks waterbottle
+class tmodWeaponEnergyBlade extends EquipmentClasses.WeaponEnergyBlade config(tribesmodSettings);
 
 var Vector extent;
 var config float missEnergyUsage;
@@ -7,6 +7,11 @@ var config bool flagDrop;
 var config float damageAmt;
 var config float knockBackVelocity;
 
+/**
+* Override constructor. Implement flagdrop
+*
+* Thanks to waterbottle
+*/
 simulated protected function Projectile makeProjectile(Rotator fireRot, Vector fireLoc)
 {
     local Vector hitLocation;
@@ -20,51 +25,39 @@ simulated protected function Projectile makeProjectile(Rotator fireRot, Vector f
     local PlayerController pc;
 
     local Character weaponOwner;
-    //local PlayerCharacterController enemyPCC;
 
     weaponOwner = Character(rookOwner);
-
     useAmmo();
     fireCount++;
 
-    if (pc != None)
-    {
+    if (pc != None) {
         startLoc = pc.location;
         viewRot = pc.rotation;
         viewActor = Owner;
         pc.PlayerCalcView(viewActor, startLoc, viewRot);
-    }
-    else
-    {
+    } else {
         startLoc = Owner.Location;
         viewRot = fireRot;
     }
 
     traceEnd = fireLoc + Vector(viewRot) * range;
-
     victim = Trace(hitLocation, hitNormal, traceEnd, startLoc, true, extent, hitMaterial);
 
-    if (victim != None && TerrainInfo(victim) == None)
-    {
+    if (victim != None && TerrainInfo(victim) == None) {        
         TriggerEffectEvent('Hit', None, hitMaterial, hitLocation, Rotator(hitNormal));
-
         weaponOwner.changeEnergy(energyUsage);
-
-        if (Level.NetMode != NM_Client)
-                {
+        
+        if (Level.NetMode != NM_Client) {
             victim.TakeDamage(damageAmt, rookOwner, hitLocation, Normal(traceEnd - fireLoc) * knockBackVelocity, damageTypeClass);
-            if(Character(victim) != None && flagdrop)
-                        {
-            Character(victim).dropCarryables();
-                        }
 
+            if(Character(victim) != None && flagdrop) {
+                Character(victim).dropCarryables();
+            }
         }
     }
-    else
-        {
-    Character(rookOwner).changeEnergy(missEnergyUsage * -1);
+    else {
+        Character(rookOwner).changeEnergy(missEnergyUsage * -1);
     }
-
     return None;
 }
 

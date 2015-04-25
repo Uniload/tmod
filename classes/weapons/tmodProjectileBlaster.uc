@@ -1,11 +1,17 @@
 class tmodProjectileBlaster extends EquipmentClasses.ProjectileBlaster config(tribesmodSettings);
 
-
+//projectile
 var bool bShouldBounce;
 var config float bounceTime "The amount of time for which a projectile is allowed to bounce";
 var config int maxBounces;
 var config float damageAmt;
-
+//weapon
+var config float BlasterSpread;
+var config int BlasterBulletAmount;
+var config float BlasterRoundsPerSecond;
+var config float BlasterEnergyUsage;
+var config float BlasterVelocity;
+var config float BlasterPIVF;
 
 //const AI_FRIENDLY_FIRE_MULTIPLIER = 0.2;
 
@@ -75,4 +81,11 @@ defaultproperties
      xDrawScalePerSecond=10.000000
      Knockback=15000.000000
      DrawScale3D=(X=0.300000,Y=0.300000,Z=0.300000)
+     
+     BlasterSpread=2.200000
+     BlasterBulletAmount=7
+     BlasterRoundsPerSecond=1.200000
+     BlasterEnergyUsage=1.500000
+     BlasterVelocity=18000.000000
+     BlasterPIVF=0.000000
 }
