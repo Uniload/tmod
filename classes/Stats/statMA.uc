@@ -4,13 +4,13 @@ class statMA extends Gameplay.ExtendedStat;
 *   @info   ... Ingame range and "distance".
 *
 *
-*   The ingame range (1 unit) equals to a value of (0,0125)     [ 100 (ingame units) = (distance of) 1,25 ]
+*   The ingame range (1 unit) equals to a value of (0,0125)     [ 100 * (1/80) ingame units = (distance of) 100] ]
 *
 *
 *   "Ma stat" minimum distance (0) = 0 units
 *   "Ma stat" maximum distance (11000) = 137,5 units
 *
-*   (note: Altiude seems to use a different scale than distance)
+*   (note: Altiude seems to use different scaling than distance)
 */
 
 defaultproperties

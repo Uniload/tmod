@@ -22,9 +22,9 @@
 *       - Changes some BaseDevice's shield classes (catapult and inventory stations).
 *       - removes the deployable BaseDevice stations (turrets and mines).
 *       - removes the base turrets
-*       - Adds stat classes to the game
+*       - Adds new game stats to the game
 *       - Adds mutate commands. See function Mutate()
-*       - Increased the grapple roundsPerSecond slightly to reduce the chance for the grapple bug to occur.
+*       - Increased the grapple roundsPerSecond slightly to reduce the chance for the "grapple bug" to occur.
 *       - Fixes pack reload animation (though it is still buggy and will not work when the reload time is modified ingame (needs some more testing)
 *       - Fixed Repair pack emmiter's max range (was bugged in promod)
 *       - Fixes shield pack texture when getting hit and carrying a shield pack (will now display a shader around the player's model when activating the pack, or when getting hit)
@@ -174,6 +174,13 @@ function bool tournamentOn(string param) {
     }
 }
 
+function int convert(int x) {
+ /*
+ *  Convert ingame range to config distance.
+ */
+    return x * (1/80);   
+}
+    
 simulated function PreBeginPlay() {
     /* @effect ... event
     *   
@@ -203,7 +210,15 @@ simulated function PreBeginPlay() {
 }
 
 simulated function destroyClientReplicationClass() {
-   
+    /*
+    * @effect ...
+    *
+    *   function checks the loaded actors for class'ClientReplication' and destroys it if it was still alive.
+    *   (Class ClientReplication extends Engine.LevelInfo and should in theory get destroyed whenever the map ends. This is just an additional check.
+    *
+    *   This function can be called ingame by any admin with the following mutate command: "admin mutate destroyrepclass".
+    */
+    
     local tribesmod.clientReplication cRep;
     
     if (cRep == None)
@@ -261,7 +276,6 @@ simulated function modifyFlagThrower() {
     /* @effect ... function
     *
     *   Allows the administrator to modify flag throwing properties. The default flag classes will be overwritten with the tribesmod clases.
-    *   Flag textures will also be overwritten (currently only if the mod is running on a listen-server) 
     *
     *   Time Stamp: 14-02-15 15:24:24
     */ 
@@ -405,7 +419,7 @@ function disableMineTurret() {
 function modifyStats() {
     /* @effect ... function
     *   
-    *   Modifies and adds new stats to the game (midair stats)
+    *   Modifies and adds new game stats to the game.
     *
     *   Time Stamp: 22-02-15 15:26:58
     */
@@ -481,7 +495,8 @@ simulated function PostBeginPlay() {
     /* @effect ... event
     * 
     *   Used to implement logic that should happen after engine-side initialisation of the actor. In our case, used for anti-baserape, anti-team kill and mines/turret control
-    *   Most of these functions originate from dEhaV's original mod, "promod".    
+    *   Most of these functions originate from dEhaV's original mod, "promod".
+    *   This function will aslo spawn the ClientReplication class on all clients and server (this happens at map startup for the server, and right after a client has loaded the map).   
     *
     *   Time Stamp: 14-02-15 15:27:24
     */
@@ -490,7 +505,7 @@ simulated function PostBeginPlay() {
     
     Spawn(class'tribesmod.clientReplication');
 
-    if(!tournamentOn(" ") && CTF())     // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true, run in tournament Mode 
+    if(!tournamentOn(" ") && CTF())     // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true
     {          
     UpdateMTDevices();
     UpdateBRDevices();
@@ -498,13 +513,22 @@ simulated function PostBeginPlay() {
     SetTimer(TimerInterval, true);
     }
     
-    SaveConfig();
+    ServerSaveConfig();
+}
+
+function ServerSaveConfig() {
+    /*
+    *   Function is not simulated. This means the functions will be called on both client and server, but only the server will execute the code.
+    *   In this case, only the server's TribesmodSettings.ini file needs to save the variables, so we do not simulate the function.
+    */
+ 
+    SaveConfig();   
 }
 
 function Timer() {
     /* @effect ... function
     *   
-    *   Server-side timer. Also takes care of the anti-teamkill system
+    *   Server-side timer (Server and clients are never in sync, so timers should never be simulated). Also takes care of the anti-teamkill system
     *
     *   Time Stamp: 15-02-15 15:28:06
     */
@@ -617,7 +641,7 @@ function bool EnableSniperRifle() {
 }
    
 function bool EnableBR() {
-    /* @effect ... function
+    /* @effect ... functionc
     *   
     *   Enables base-rape  above a certain player amount
     *
@@ -633,7 +657,7 @@ function bool EnableBR() {
         return true;
     }
 }
-    
+     
 function UpdateMTDevices() {
     /* @effect ... function
     *   
@@ -720,7 +744,7 @@ function SniperRifleAllowance() {
 event Actor ReplaceActor(Actor Other) {
     /* @effect ... event
     *   
-    *   find actors and replace their classes
+    *   find actors and replace their classes (This function is called whenever an actor is spawned in the game world).
     *   Note: Actor ReplaceActor() was a simulated event, this caused timer-based settings (like weapon firerate) to be occasionnaly out of sync with the server.
     *
     *   Tested the simulated property of the ReplaceActor event:
@@ -911,6 +935,8 @@ event Actor ReplaceActor(Actor Other) {
 function string MutateSpawnCombatRoleClass(Character c) {
     /* @effect ... function
     *   
+    *   Function copied form promod.
+    *
     *   Time Stamp: 20-02-15 15:31:21
     */
     
@@ -1042,6 +1068,8 @@ simulated function ModifyPlayer(Pawn Other) {
     *
     *   Called by the server every time a player spawns
     */
+    
+    super.ModifyPlayer(Other);
     
     //Spawn(class'tribesmod.clientReplication');
 }

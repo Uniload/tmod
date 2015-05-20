@@ -79,7 +79,7 @@ defaultproperties
     TKBanMessage="Server: %1 was banned for team killing."
     SniperEnabled="Server: The Sniper Rifle will be disabled untill more players join the game."
     SniperDisabled="Server: The Sniper Rifle has been enabled."
-    mutateTest="Server: Hello Tribes Vengeance."
+    mutateTest="Client: Hello Tribes Vengeance."
     adminMutateTest="Admin: Hello Tribes Vengeance."
     trocOn="Server: Troc has been enabled."
     trocOff="Server: Troc has been disabled."

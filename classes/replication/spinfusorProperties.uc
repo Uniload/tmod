@@ -3,6 +3,11 @@ class spinfusorProperties extends Engine.Actor config(tribesmodSettings);
 *   Time Stamp: 15-04-15 19:05:37
 */
 
+
+/*
+* Replication attempt
+*/
+
 var config float radiusDamageAmt;
 var config float radiusDamageMomentum;
 var config float radiusDamageSize;
