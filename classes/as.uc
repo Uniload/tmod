@@ -213,7 +213,7 @@ simulated function destroyClientReplicationClass() {
     /*
     * @effect ...
     *
-    *   function checks the loaded actors for class'ClientReplication' and destroys it if it was still alive.
+    *   function checks the loaded actors for class'ClientReplication' and destroys it if it is still alive.
     *   (Class ClientReplication extends Engine.LevelInfo and should in theory get destroyed whenever the map ends. This is just an additional check.
     *
     *   This function can be called ingame by any admin with the following mutate command: "admin mutate destroyrepclass".
@@ -519,7 +519,7 @@ simulated function PostBeginPlay() {
 function ServerSaveConfig() {
     /*
     *   Function is not simulated. This means the functions will be called on both client and server, but only the server will execute the code.
-    *   In this case, only the server's TribesmodSettings.ini file needs to save the variables, so we do not simulate the function.
+    *   In this case, only the server's TribesmodSettings.ini file needs to save this class variables, meaning we do not need simulate the function.
     */
  
     SaveConfig();   
