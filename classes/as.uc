@@ -221,16 +221,12 @@ simulated function destroyClientReplicationClass() {
     
     local tribesmod.clientReplication cRep;
     
-    if (cRep == None)
-    {
-        log("No remaining clientReplication class was found");
-    }  
-    else
+    if (cRep != None)
     {
         foreach Allactors (class'tribesmod.clientReplication', cRep)
             cRep.Destroy();
 
-        log("class'clientReplication' has been destroyed");
+        log("remaining 'clientReplication' classes have been destroyed");
     }
 }
 
@@ -314,39 +310,39 @@ function modifyVehicles() {
     
         if(EnablePod) {
             if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
-            vehiclePad.vehicleClass = class'tribesmod.tmodPod';
+				vehiclePad.vehicleClass = class'tribesmod.tmodPod';
         } else if(!EnablePod) {
-                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
-                    vehiclePad.setSwitchedOn(false);
+            if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
+                vehiclePad.setSwitchedOn(false);
         }
                 
         if(EnableRover) {
             if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy') {
                 if(EnableRoverGun) {
                     vehiclePad.vehicleClass = class'tribesmod.tmodDefaultBuggy';
-                    } else {
+                } else {
                     vehiclePad.vehicleClass = class'tribesmod.tmodBuggy';
                 }
             }
         } else if(!EnableRover) {
-                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy')
-                    vehiclePad.setSwitchedOn(false);
+            if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy')
+                vehiclePad.setSwitchedOn(false);
         } 
                 
         if(EnableAssaultShip) {
-              if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
-            vehiclePad.setSwitchedOn(true);
+			if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
+				vehiclePad.setSwitchedOn(true);
         } else if(!EnableAssaultShip) {
-                if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
-                    vehiclePad.setSwitchedOn(false);
+            if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
+                vehiclePad.setSwitchedOn(false);
         }
                 
         if(EnableTank) {
-              if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
-              vehiclePad.vehicleClass = class'tribesmod.tmodTank';
+            if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
+				vehiclePad.vehicleClass = class'tribesmod.tmodTank';
         } else if(!EnableTank) {
-                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
-                    vehiclePad.setSwitchedOn(false);
+            f (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
+                vehiclePad.setSwitchedOn(false);
         }
     }
 }
@@ -447,7 +443,7 @@ function modifyStats() {
         }
     
         statCount = M.extendedProjectileDamageStats.Length;
-        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We have 8 new stats
+        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We will implement 7 new stats
     
         //E-Blade       1
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodBladeProjectileDamageType';
@@ -484,7 +480,7 @@ function modifyStats() {
         M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statOMG';
         ++statCount;
         
-        //Pointer Range (need a better way to display the range)        8
+        //Pointer Range (attempt at making the "pointer" weapon mod display a distance when targeting a player)        8
         //M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodPointerDamageType';
         //M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statPointer';
         //++statCount;
@@ -837,6 +833,7 @@ event Actor ReplaceActor(Actor Other) {
     
     if(Other.IsA('WeaponBuckler')) {
         // from compmod07
+		// bugs the buckler. Needs to be tweaked 
         WeaponBuckler(Other).checkingDamage = 0;        //was 15
         WeaponBuckler(Other).checkingDmgVelMultiplier = 0;  //was 0.01
         WeaponBuckler(Other).checkingMultiplier = 0;    //was 300
@@ -945,6 +942,13 @@ function string MutateSpawnCombatRoleClass(Character c) {
     //Heavies. Knockback of weapon explosions decreased to balance health increase with disc jumping.  Copied from Vanilla Plus. Thank you Odio
     c.team().combatRoleData[2].role.default.armorClass.default.knockbackScale = HOknockbackscale; //was 1.175
     c.team().combatRoleData[2].role.default.armorClass.default.health = HOHealth; //was 195
+	
+	/*
+	Info:
+	
+	The heavy class got a reduced knockback scale to make it less vulnerable to enemy explosions. This caused the discjump (explosion) to be weaker on the already slow heavy class.
+	To compensate for the weaker discjump, heavies were given more health so that they could remain relatively mobile by increasing the number of discjumps they could perform.	
+	*/
 
     c.team().combatRoleData[0].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorLight", class'class')).default.AllowedWeapons;
     c.team().combatRoleData[1].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorMedium", class'class')).default.AllowedWeapons;
@@ -1050,6 +1054,12 @@ simulated function Mutate(string Command, PlayerController Sender) {
         else if (Command ~= "destroyrepclass") {
             destroyClientReplicationClass();
         }
+		
+		else if (command ~= "exploit") {
+			// TEST FOR A POTENTIAL EXPLOIT
+			Sender.clientMessage(" PASSED THROUGH THE IF CHECK ");
+			Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 111);
+		}
     }
     
     else if (!allowMutate) {
