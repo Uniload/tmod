@@ -197,8 +197,8 @@ simulated function PreBeginPlay() {
     log("***    TribesMod     ***");
     log("************************");
     
-    destroyClientReplicationClass();
-    
+    destroyClientReplicationClass();		// should not be needed.
+	
     modifyCharacters();
     modifyPlayerStart();
     modifyFlagThrower();
@@ -1060,6 +1060,10 @@ simulated function Mutate(string Command, PlayerController Sender) {
 			Sender.clientMessage(" PASSED THROUGH THE IF CHECK ");
 			Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 111);
 		}
+		
+		else if (Command ~= "time") {
+		// TEST SYSTEM TIME
+			Sender.ClientMessage(GetSystemTime( out int Year, out int Month, out int DayOfWeek, out int Day, out int Hour, out int Min, out int Sec, out int MSec );
     }
     
     else if (!allowMutate) {

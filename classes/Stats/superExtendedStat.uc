@@ -13,13 +13,13 @@ var int damage;
 var int projectileDistance;
 
 
-static function bool isEligible(Controller Source, Controller Target, float damageAmount)
+static function bool isEligible(Controller Source, Controller Target, float damageAmount, out int projectileDistance)
 {
     local vector hitLocation, hitNormal, startTrace, endTrace;
     local int relativeDistance;
     local Character targetCharacter;
     local PlayerCharacterController pcc;
-    local int range;
+    local int projectileDistance;
     
     if (Target == None || Source == None)
         return false;
@@ -62,9 +62,9 @@ static function bool isEligible(Controller Source, Controller Target, float dama
     // If this point is reached, all tests passed and the stat is awarded
     
     //===============================MODIFIED CODE==================================
-    range = (relativeDistance / 100) * 1.25;
+    projectileDistance = (relativeDistance / 100) * 1.25;
 
-    //setValues(Source, Target, damageAmount, range);
+    //setValues(Source, Target, damageAmount, projectileDistance);
     
     return true;
 }
