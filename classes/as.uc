@@ -67,7 +67,7 @@ class as extends Gameplay.Mutator config(tribesmodSettings);
 *
 */
 
-const MOD_VERSION = "tribesmod";
+const MOD_VERSION = "tribesmod_alpha";
 //replication class reference
 var public class clientReplicationClass;
 var private bool spawnRepClass;
@@ -148,37 +148,18 @@ function bool CTF() {
             return true;
 }
         
-function bool tournamentOn(string param) {
+function bool tournamentOn() {
     /* @effect ... function
     *
     *   Called by PostBeginPlay(). Will return true if the current map is running in tournament mode.
     *
-    * @param    ...
-    *           if(param == string "boolean")
-    *               Checks if the current game is running in tournament mode.
-    *           if(param != string "boolean")
-    *               Uses the function to enable or disable code when tournament mode is on (f.e. no extra stats in tourney mode)
-    *
     *   Time Stamp: 14-02-15 15:21:29
     */
-    
-    if(param == "boolean") {
-        return MultiplayerGameInfo(Level.Game).bTournamentMode;        
-    }
-    else {     
-        //return !RunInTournament ?  MultiplayerGameInfo(Level.Game).bTournamentMode : false;       not suported
-        if (!RunInTournament)
-            return MultiplayerGameInfo(Level.Game).bTournamentMode;
-        else
-            return false;
-    }
-}
-
-function int convert(int x) {
- /*
- *  Convert ingame range to config distance.
- */
-    return x * (1/80);   
+     
+    if (!RunInTournament)
+        return MultiplayerGameInfo(Level.Game).bTournamentMode;
+    else
+        return false;
 }
     
 simulated function PreBeginPlay() {
@@ -197,8 +178,8 @@ simulated function PreBeginPlay() {
     log("***    TribesMod     ***");
     log("************************");
     
-    destroyClientReplicationClass();		// should not be needed.
-	
+    destroyClientReplicationClass();
+    
     modifyCharacters();
     modifyPlayerStart();
     modifyFlagThrower();
@@ -213,7 +194,7 @@ simulated function destroyClientReplicationClass() {
     /*
     * @effect ...
     *
-    *   function checks the loaded actors for class'ClientReplication' and destroys it if it is still alive.
+    *   function checks the loaded actors for class'ClientReplication' and destroys it if it was still alive.
     *   (Class ClientReplication extends Engine.LevelInfo and should in theory get destroyed whenever the map ends. This is just an additional check.
     *
     *   This function can be called ingame by any admin with the following mutate command: "admin mutate destroyrepclass".
@@ -221,12 +202,13 @@ simulated function destroyClientReplicationClass() {
     
     local tribesmod.clientReplication cRep;
     
-    if (cRep != None)
-    {
+    if (cRep == None) {
+        log("No remaining clientReplication class was found");
+    } else {
         foreach Allactors (class'tribesmod.clientReplication', cRep)
             cRep.Destroy();
 
-        log("remaining 'clientReplication' classes have been destroyed");
+        log("class'clientReplication' has been destroyed");
     }
 }
 
@@ -310,39 +292,39 @@ function modifyVehicles() {
     
         if(EnablePod) {
             if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
-				vehiclePad.vehicleClass = class'tribesmod.tmodPod';
+            vehiclePad.vehicleClass = class'tribesmod.tmodPod';
         } else if(!EnablePod) {
-            if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
-                vehiclePad.setSwitchedOn(false);
+                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehiclePod')
+                    vehiclePad.setSwitchedOn(false);
         }
                 
         if(EnableRover) {
             if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy') {
                 if(EnableRoverGun) {
                     vehiclePad.vehicleClass = class'tribesmod.tmodDefaultBuggy';
-                } else {
+                    } else {
                     vehiclePad.vehicleClass = class'tribesmod.tmodBuggy';
                 }
             }
         } else if(!EnableRover) {
-            if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy')
-                vehiclePad.setSwitchedOn(false);
+                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleBuggy')
+                    vehiclePad.setSwitchedOn(false);
         } 
                 
         if(EnableAssaultShip) {
-			if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
-				vehiclePad.setSwitchedOn(true);
+              if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
+            vehiclePad.setSwitchedOn(true);
         } else if(!EnableAssaultShip) {
-            if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
-                vehiclePad.setSwitchedOn(false);
+                if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleAssaultShip')
+                    vehiclePad.setSwitchedOn(false);
         }
                 
         if(EnableTank) {
-            if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
-				vehiclePad.vehicleClass = class'tribesmod.tmodTank';
+              if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
+              vehiclePad.vehicleClass = class'tribesmod.tmodTank';
         } else if(!EnableTank) {
-            f (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
-                vehiclePad.setSwitchedOn(false);
+                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
+                    vehiclePad.setSwitchedOn(false);
         }
     }
 }
@@ -376,19 +358,22 @@ function removeBaseTurrets() {
     *   Removes base turrets (not the deployable ones)
     *   | if (RemoveBaseTurret) 
     *
-    *   Time Stamp: 14-02-15 15:25:58
+    *   Time Stamp: 06-11-15 17:36:00
     */
     
     local BaseObjectClasses.BaseTurret BaseTurrets;
     local BaseObjectClasses.StaticMeshRemovable TurretBase;
     
-    foreach AllActors(class'BaseObjectClasses.BaseTurret', BaseTurrets)
-        if(BaseTurrets != None && RemoveBaseTurret)
-            BaseTurrets.destroy();
+    if(RemoveBaseTurret) {
+    
+        foreach AllActors(class'BaseObjectClasses.BaseTurret', BaseTurrets)
+            if(BaseTurrets != None)
+                BaseTurrets.destroy();
             
-    foreach AllActors(class'BaseObjectClasses.StaticMeshRemovable', TurretBase)
-        if(BaseTurrets != None && RemoveBaseTurret)
-            TurretBase.destroy();
+        foreach AllActors(class'BaseObjectClasses.StaticMeshRemovable', TurretBase)
+            if(BaseTurrets != None)
+                TurretBase.destroy();
+    }
 }
         
 function disableMineTurret() {
@@ -397,19 +382,24 @@ function disableMineTurret() {
     *   Disables the deployable Turret and Mine stations
     *   | if (DisableDeployableTurrets && DisableMines)
     *
-    *   Time Stamp: 14-02-15 15:26:30
+    *   Time Stamp: 06-11-15 17:37:19
     */
     
     local BaseObjectClasses.BaseDeployableSpawnTurret DeployableTurretStation;
     local BaseObjectClasses.BaseDeployableSpawnShockMine DeployableMineStation;
+    
+    if(DisableDeployableTurrets) {
 
-    foreach AllActors(class'BaseObjectClasses.BaseDeployableSpawnTurret', DeployableTurretStation)
-        if(DeployableTurretStation != None && DisableDeployableTurrets)
-            DeployableTurretStation.Destroy();
-
-    foreach AllActors(class'BaseObjectClasses.BaseDeployableSpawnShockMine', DeployableMineStation)
-        if(DeployableMineStation != None && DisableMines)
-            DeployableMineStation.Destroy();
+        foreach AllActors(class'BaseObjectClasses.BaseDeployableSpawnTurret', DeployableTurretStation)
+            if(DeployableTurretStation != None)
+                DeployableTurretStation.Destroy();
+    }
+    
+    if (DisableMines) {
+        foreach AllActors(class'BaseObjectClasses.BaseDeployableSpawnShockMine', DeployableMineStation)
+            if(DeployableMineStation != None)
+                DeployableMineStation.Destroy();
+    }
 }
 
 function modifyStats() {
@@ -443,7 +433,7 @@ function modifyStats() {
         }
     
         statCount = M.extendedProjectileDamageStats.Length;
-        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We will implement 7 new stats
+        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We have 8 new stats
     
         //E-Blade       1
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodBladeProjectileDamageType';
@@ -480,7 +470,12 @@ function modifyStats() {
         M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statOMG';
         ++statCount;
         
-        //Pointer Range (attempt at making the "pointer" weapon mod display a distance when targeting a player)        8
+        //SPLASH        8
+        M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'EquipmentClasses.ProjectileDamageTypeSpinfusor';
+        M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statSplash';
+        ++statCount;
+        
+        //Pointer Range (need a better way to display the range)        9
         //M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodPointerDamageType';
         //M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statPointer';
         //++statCount;
@@ -501,7 +496,9 @@ simulated function PostBeginPlay() {
     
     Spawn(class'tribesmod.clientReplication');
 
-    if(!tournamentOn(" ") && CTF())     // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true
+    if(!tournamentOn() && CTF())     // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true
+    
+    /*TEST WHEN OFF*/
     {          
     UpdateMTDevices();
     UpdateBRDevices();
@@ -515,7 +512,7 @@ simulated function PostBeginPlay() {
 function ServerSaveConfig() {
     /*
     *   Function is not simulated. This means the functions will be called on both client and server, but only the server will execute the code.
-    *   In this case, only the server's TribesmodSettings.ini file needs to save this class variables, meaning we do not need simulate the function.
+    *   In this case, only the server's TribesmodSettings.ini file needs to save the variables, so we do not simulate the function.
     */
  
     SaveConfig();   
@@ -750,11 +747,13 @@ event Actor ReplaceActor(Actor Other) {
     *   Time Stamp: 27-02-15 17:1l7:52
     */
     
+    /*
     if(Other.IsA('anticsCharacterController')) {
         //catch antics' modified player controller class
         log("Found anticsCharacterController class");
         return Super.ReplaceActor(Other);
     }
+    */
     
     if(Other.IsA('WeaponSpinfusor')) {
            
@@ -787,8 +786,9 @@ event Actor ReplaceActor(Actor Other) {
         else
             Grappler(Other).projectileClass = Class'tmodGrapplerProjectile';
             
-        // Increased grapple RPS slightly to reduce the chance for the grapple bug to occur.
-        Grappler(Other).roundsPerSecond = 1.0;
+            // Increased grapple RPS by 10% to reduce the chance for the grapple bug to occur.
+            //Grappler(Other).roundsPerSecond = 1.0;
+            Grappler(Other).roundsPerSecond += Grappler(Other).roundsPerSecond / 10;
         return Super.ReplaceActor(Other);
     }
     
@@ -833,7 +833,6 @@ event Actor ReplaceActor(Actor Other) {
     
     if(Other.IsA('WeaponBuckler')) {
         // from compmod07
-		// bugs the buckler. Needs to be tweaked 
         WeaponBuckler(Other).checkingDamage = 0;        //was 15
         WeaponBuckler(Other).checkingDmgVelMultiplier = 0;  //was 0.01
         WeaponBuckler(Other).checkingMultiplier = 0;    //was 300
@@ -942,13 +941,6 @@ function string MutateSpawnCombatRoleClass(Character c) {
     //Heavies. Knockback of weapon explosions decreased to balance health increase with disc jumping.  Copied from Vanilla Plus. Thank you Odio
     c.team().combatRoleData[2].role.default.armorClass.default.knockbackScale = HOknockbackscale; //was 1.175
     c.team().combatRoleData[2].role.default.armorClass.default.health = HOHealth; //was 195
-	
-	/*
-	Info:
-	
-	The heavy class got a reduced knockback scale to make it less vulnerable to enemy explosions. This caused the discjump (explosion) to be weaker on the already slow heavy class.
-	To compensate for the weaker discjump, heavies were given more health so that they could remain relatively mobile by increasing the number of discjumps they could perform.	
-	*/
 
     c.team().combatRoleData[0].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorLight", class'class')).default.AllowedWeapons;
     c.team().combatRoleData[1].role.default.armorClass.default.AllowedWeapons = class<Armor>(DynamicLoadObject("tribesmod.tmodArmorMedium", class'class')).default.AllowedWeapons;
@@ -1054,16 +1046,6 @@ simulated function Mutate(string Command, PlayerController Sender) {
         else if (Command ~= "destroyrepclass") {
             destroyClientReplicationClass();
         }
-		
-		else if (command ~= "exploit") {
-			// TEST FOR A POTENTIAL EXPLOIT
-			Sender.clientMessage(" PASSED THROUGH THE IF CHECK ");
-			Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 111);
-		}
-		
-		else if (Command ~= "time") {
-		// TEST SYSTEM TIME
-			Sender.ClientMessage(GetSystemTime( out int Year, out int Month, out int DayOfWeek, out int Day, out int Hour, out int Min, out int Sec, out int MSec );
     }
     
     else if (!allowMutate) {

@@ -1,10 +1,5 @@
-
-class spinfusorProperties extends EquipmentClasses.ProjectileSpinfusor config(tribesmodSettings);
-
+class spinfusorProperties extends Engine.Actor config(tribesmodSettings);
 /*
-*******************************************Replicate default projectile class
-*class spinfusorProperties extends Engine.Actor config(tribesmodSettings);
-*
 *   Time Stamp: 15-04-15 19:05:37
 */
 
@@ -24,13 +19,11 @@ var config float ProjectileVelocity;
 var config float InheritedVelFactor;
 var config int AmmoUsage;
 
-/*
 replication
 {
     reliable if (ROLE == ROLE_Authority)
         AccelerationMagtitude, LifeSpan, MaxVelocity, ProjectileVelocity, InheritedVelFactor, InitializeSpinfusor, ClientLogTest;
 }
-*/
 
 event PreBeginPlay()
 {
