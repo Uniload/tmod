@@ -323,8 +323,10 @@ function modifyVehicles() {
               if(vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
               vehiclePad.vehicleClass = class'tribesmod.tmodTank';
         } else if(!EnableTank) {
-                if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
-                    vehiclePad.setSwitchedOn(false);
+
+            if (vehiclePad != None && vehiclePad.vehicleClass == class'VehicleClasses.VehicleTank')
+                vehiclePad.setSwitchedOn(false);
+
         }
     }
 }
