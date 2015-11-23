@@ -188,6 +188,8 @@ simulated function PreBeginPlay() {
     removeBaseTurrets();
     disableMineTurret();
     modifyStats();
+	
+	ServerSaveShieldPackIni();
 }
 
 simulated function destroyClientReplicationClass() {
@@ -482,6 +484,18 @@ function modifyStats() {
         //M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statPointer';
         //++statCount;
     }
+	
+	function ServerSaveShieldPackIni() {
+	/**
+	 *	Apply/import ShieldPack variables from ini to code;
+	 *  Used to be done in the classe's own PostBeginPlay() function.
+	 */
+	
+		Class'EquipmentClasses.PackShield'.default.deactivationDuration = Class'tribesmod.tmodPackShield'.default.stopDuration;
+		Class'EquipmentClasses.PackShield'.default.durationSeconds = Class'tribesmod.tmodPackShield'.default.shieldDuration;
+		Class'EquipmentClasses.PackShield'.default.rampUpTimeSeconds = Class'tribesmod.tmodPackShield'.default.RUPSeconds;
+		Class'EquipmentClasses.PackShield'.default.rechargeTimeSeconds = Class'tribesmod.tmodPackShield'.default.shieldReload;
+	}
 }
 
 simulated function PostBeginPlay() {

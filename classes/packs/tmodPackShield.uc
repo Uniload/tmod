@@ -29,10 +29,11 @@ var sound shieldActive;
 
 event PostBeginPlay() {
     
-    setShieldTimeValues();   
+    /* setShieldTimeValues(); */ 
     SaveConfig();
 }
 
+/*
 function setShieldTimeValues() {
     
     local tmodPackShield tShieldPack;
@@ -44,6 +45,7 @@ function setShieldTimeValues() {
         tShieldPack.deactivatingDuration = stopDuration;
     }
 }
+*/
 
 simulated function applyPassiveEffect(Character characterOwner)
 {
