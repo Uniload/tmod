@@ -27,6 +27,9 @@ replication
 
 event PreBeginPlay()
 {
+    super.PreBeginPlay();
+    
+    /*
     local tribesmod.spinfusorProperties sP;
  
     foreach AllActors(class'tribesmod.spinfusorProperties', sP)
@@ -37,6 +40,8 @@ event PreBeginPlay()
         }
     }
     log(sP);
+    
+    */
 }
 
 simulated event PostBeginPlay()

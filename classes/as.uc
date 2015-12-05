@@ -67,7 +67,7 @@ class as extends Gameplay.Mutator config(tribesmodSettings);
 *
 */
 
-const MOD_VERSION = "tribesmod_alpha";
+const MOD_VERSION = "tribesmod";
 //replication class reference
 var public class clientReplicationClass;
 var private bool spawnRepClass;
@@ -82,10 +82,6 @@ var config bool EnableTank;
 //function modifyPlayerStart()
 var config class<Gameplay.CombatRole> SpawnCombatRole;
 var config int SpawnInvincibility;
-//function modifySniperRifleWeaponClass
-var public int SnipeAmmoCount;
-var public int SnipeAmmoUsage;
-var public float SnipeLife;
 //function actorReplace()
 var config bool useDefaultBurner;
 var config float PlasmaPIVF;
@@ -111,9 +107,6 @@ var config bool BaseRape;
 var config bool TeamKillBanUser;
 var config int MaxTeamKills;
 var config int TimerInterval;
-//function isSniperAllowed()
-var config bool SniperPlayerThreshold;
-var config int SniperTeamPlayerMin;
 //function Mutate()
 var private bool allowMutate;          // TEST: cannot be changed with console commands
 var private bool trocIsOn;
@@ -188,8 +181,6 @@ simulated function PreBeginPlay() {
     removeBaseTurrets();
     disableMineTurret();
     modifyStats();
-	
-	ServerSaveShieldPackIni();
 }
 
 simulated function destroyClientReplicationClass() {
@@ -437,7 +428,7 @@ function modifyStats() {
         }
     
         statCount = M.extendedProjectileDamageStats.Length;
-        M.extendedProjectileDamageStats.Insert(statCount, 7);       // We have 8 new stats
+        M.extendedProjectileDamageStats.Insert(statCount, 8);       // We have 8 new stats
     
         //E-Blade       1
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodBladeProjectileDamageType';
@@ -478,24 +469,7 @@ function modifyStats() {
         M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'EquipmentClasses.ProjectileDamageTypeSpinfusor';
         M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statSplash';
         ++statCount;
-        
-        //Pointer Range (need a better way to display the range)        9
-        //M.extendedProjectileDamageStats[statCount].damageTypeClass = Class'tribesmod.tmodPointerDamageType';
-        //M.extendedProjectileDamageStats[statCount].extendedStatClass = Class'statPointer';
-        //++statCount;
     }
-	
-	function ServerSaveShieldPackIni() {
-	/**
-	 *	Apply/import ShieldPack variables from ini to code;
-	 *  Used to be done in the classe's own PostBeginPlay() function.
-	 */
-	
-		Class'EquipmentClasses.PackShield'.default.deactivationDuration = Class'tribesmod.tmodPackShield'.default.stopDuration;
-		Class'EquipmentClasses.PackShield'.default.durationSeconds = Class'tribesmod.tmodPackShield'.default.shieldDuration;
-		Class'EquipmentClasses.PackShield'.default.rampUpTimeSeconds = Class'tribesmod.tmodPackShield'.default.RUPSeconds;
-		Class'EquipmentClasses.PackShield'.default.rechargeTimeSeconds = Class'tribesmod.tmodPackShield'.default.shieldReload;
-	}
 }
 
 simulated function PostBeginPlay() {
@@ -511,6 +485,8 @@ simulated function PostBeginPlay() {
     super.PostBeginPlay();
     
     Spawn(class'tribesmod.clientReplication');
+    SetStats();
+    SaveConfigVariables();
 
     if(!tournamentOn() && CTF())     // Functions will never be called if the gamemode is not CTF, but will, if RunInTournament=true
     
@@ -518,11 +494,32 @@ simulated function PostBeginPlay() {
     {          
     UpdateMTDevices();
     UpdateBRDevices();
-    SniperRifleAllowance();
     SetTimer(TimerInterval, true);
     }
     
     ServerSaveConfig();
+}
+
+function setStats() {
+   
+    //maxDistance == vt + (1/2)at^2
+
+    local float v;
+    local float dT;
+    local float a;
+    
+    v = Class'spinfusorProperties'.default.ProjectileVelocity;
+    a = Class'spinfusorProperties'.default.AccelerationMagtitude;
+    dT = Class'spinfusorProperties'.default.LifeSpan;
+    
+    class'tribesmod.statSplash'.default.minDistance = ((v*dT) + ((0.5*a) * (dT * dT)));
+}
+
+function SaveConfigVariables() {
+    
+    //Damage Needs to be set before the projectile class is initialised.
+    Class'tmodProjectileSniperRifle'.default.damageAmt = Class'tmodProjectileSniperRifle'.default.sniperDamage;
+    
 }
 
 function ServerSaveConfig() {
@@ -570,18 +567,6 @@ function Timer() {
             Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 104);
         }
     
-    if(SniperPlayerThreshold && !EnableSniperRifle())
-    {
-        SniperPlayerThreshold = false;
-        SniperRifleAllowance();
-        Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 108);
-    } else if(!SniperPlayerThreshold && EnableSniperRifle())
-        {
-            SniperPlayerThreshold = true;
-            SniperRifleAllowance();
-            Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 109);
-        }
-    
     //Anti-TK
     for (C = Level.ControllerList; C != none; C = C.nextController) {
         if(PlayerController(C) == none && !MultiplayerGameInfo(Level.Game).bTournamentMode)
@@ -624,25 +609,6 @@ function bool EnableMT() {
     foreach AllActors(class'TeamInfo', Team) {
         if(Team != None)
             if(Team.numPlayers() < MTTeamPlayerMin)
-                return false;
-                
-        return true;
-    }
-}
-   
-function bool EnableSniperRifle() {
-    /* @effect ... function
-    *   
-    *   Enables sniperRifle above a certain player amount
-    *
-    *   Time Stamp: 15-02-15 15:28:34
-    */
-    
-    local TeamInfo Team;
-    
-    foreach AllActors(class'TeamInfo', Team) {
-        if(Team != None)
-            if(Team.numPlayers() < SniperTeamPlayerMin)
                 return false;
                 
         return true;
@@ -735,21 +701,6 @@ function bool ShouldModifyBRDevice(BaseDevice device) {
     }
 }
 
-function SniperRifleAllowance() {
-    /* @effect ... function
-    *   
-    *   Time Stamp: 15-02-15 15:30:18
-    */
-    
-    if(SniperPlayerThreshold) {
-        SnipeAmmoCount = 0;
-        SnipeLife = 1.000000;        
-        } else if(!SniperPlayerThreshold) {
-        SnipeAmmoCount = 10;
-        SnipeLife = 0.000000;
-    }               
-}
-
 event Actor ReplaceActor(Actor Other) {
     /* @effect ... event
     *   
@@ -773,7 +724,7 @@ event Actor ReplaceActor(Actor Other) {
     
     if(Other.IsA('WeaponSpinfusor')) {
            
-        spawn(class'tribesmod.spinfusorProperties');
+        //spawn(class'tribesmod.spinfusorProperties');
     
         WeaponSpinfusor(Other).projectileClass = class'tmodProjectileSpinfusor';
         WeaponSpinfusor(Other).projectileInheritedVelFactor = class'spinfusorProperties'.default.InheritedVelFactor;
@@ -782,19 +733,17 @@ event Actor ReplaceActor(Actor Other) {
         return Super.ReplaceActor(Other);
     }
     
-    /*if(Other.IsA('WeaponSniperRifle')) {
-        WeaponSniperRifle(Other).projectileClass = Class'tmodProjectileSniperRifle';
-        WeaponSniperRifle(Other).LifeSpan = SnipeLife;
-        WeaponSniperRifle(Other).ammoCount = SnipeAmmoCount;
-        WeaponSniperRifle(Other).ammoUsage = SnipeAmmoUsage;
-        return Super.ReplaceActor(Other);
-    }*/
-    
     if(Other.IsA('WeaponSniperRifle')) {
+        WeaponSniperRifle(Other).projectileClass = Class'tmodProjectileSniperRifle';
+        return Super.ReplaceActor(Other);
+    }
+    
+    /*if(Other.IsA('WeaponSniperRifle')) {
+        //LASER POINTER
         Other.Destroy();
         log("Destroyed orig sniper, replaced with beamer");
         return ReplaceWith(Other, MOD_VERSION $ ".tmodWeaponPointer");
-    }
+    }*/
     
     if(Other.IsA('Grappler')) {
         if(EnableDegrapple)
@@ -992,15 +941,14 @@ simulated function Mutate(string Command, PlayerController Sender) {
     
         //  (admin) mutate troc
         if(Command ~= "troc") {
-            if(!trocIsOn)
-            {    
-                energyBoost = 750000.000000;
-                energyDuration = 0.100000;
+            if(!trocIsOn) {    
+                energyBoost = class'tmodPackEnergy'.default.TROCenergyBoost;
+                energyDuration = class'tmodPackEnergy'.default.TROCenergyDuration;
                 Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 112);                
                 trocIsOn = true;
-                } else {
-                energyBoost = 75000.000000;
-                energyDuration = 1.000000;
+            } else {
+                energyBoost = class'tmodPackEnergy'.default.DEFAULTenergyBoost;
+                energyDuration = class'tmodPackEnergy'.default.DEFAULTenergyBoost;
                 Level.Game.BroadcastLocalized(self, class'tmodGameMessage', 113);                
                 trocIsOn = false;
             }
@@ -1062,6 +1010,10 @@ simulated function Mutate(string Command, PlayerController Sender) {
         else if (Command ~= "destroyrepclass") {
             destroyClientReplicationClass();
         }
+        
+        else if (Command ~= "reload") {
+            SaveConfigVariables();
+        }
     }
     
     else if (!allowMutate) {
@@ -1082,8 +1034,12 @@ simulated function ModifyPlayer(Pawn Other) {
     */
     
     super.ModifyPlayer(Other);
+}
+
+
+simulated event Destroyed() {
     
-    //Spawn(class'tribesmod.clientReplication');
+    log("*** ======================= DESTROYED AS CLASS ======================= ***");
 }
 
 //#EndBlock
@@ -1114,14 +1070,8 @@ defaultproperties {
     TankDefaultProjectileVelocity = 6000
     TankMortarProjectileVelocity = 6000
     
-    SniperPlayerThreshold = false
-    SniperTeamPlayerMin = 2
-    
     EnergyBoost = 75000.000000
     EnergyDuration = 1.000000
-    SnipeAmmoCount = 0
-    SnipeAmmoUsage = 1
-    SnipeLife = 1.000000
     
     RemoveBaseTurret = false   
     DisableDeployableTurrets = false

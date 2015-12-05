@@ -3,10 +3,16 @@
 class tmodPackEnergy extends Gameplay.EnergyPack config(tribesmodSettings);
 
 
-var config int charges;
+var private int charges;
+
+var config float TROCenergyBoost;
+var config float TROCenergyDuration;
+var config float DEFAULTenergyBoost;
+var config float DEFAULTenergyDuration;
+
 
 /*
-    3Charges on Epack
+    3Charges on Epack Test
 */
 
 simulated state Active
@@ -46,10 +52,21 @@ simulated state Active
 }
 
 
+function PreBeginPlay() {
+
+    super.PreBeginPlay();
+
+    saveConfig();    
+}
+
 defaultproperties
 {
     charges=3
     
+    TROCenergyBoost=750000.000000
+    TROCenergyDuration=0.100000
+    DEFAULTenergyBoost=75000.000000
+    DEFAULTenergyDuration=1.000000
     
     refireRateScale=2.000000
     passiveRefireRateScale=1.250000
