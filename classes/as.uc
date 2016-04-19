@@ -255,6 +255,12 @@ simulated function modifyFlagThrower() {
     local GameClasses.CaptureFlagBeagle BEFlag;
     local GameClasses.CaptureFlagPhoenix PnxFlag;
     
+	/*
+	ForEach( (class'GameClasses.CaptureFlagImperial') instance : AllActors(class'GameClasses.CaptureFlagImperial') ))
+	
+	*/
+	
+	
     foreach AllActors(class'GameClasses.CaptureFlagImperial', ImpFlag)
         if(ImpFlag != None) {    
             ImpFlag.carriedObjectClass = Class'tmodFlagThrowerImperial';
